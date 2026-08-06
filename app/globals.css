@@ -1,0 +1,122 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Ch.3/Ch.17 — CSS-variable bridge for the white-label token seam.
+ * A tenant's primitive palette substitution (Ch.3 "White-label strategy")
+ * is applied by overriding these variables at deploy/runtime, without a
+ * rebuild. Tailwind's compiled classes reference the token values at
+ * build time for performance; this bridge exists specifically for the
+ * one legitimate runtime-swap case the Engineering Bible defines.
+ */
+:root {
+  --brand-ivory: #f6f2ea;
+  --brand-ink: #15130f;
+  --brand-gold: #b08d57;
+  --brand-emerald: #0e3b2e;
+}
+
+@layer base {
+  html {
+    scroll-behavior: auto; /* Lenis owns smooth scroll; native must stay auto to avoid double-handling */
+  }
+
+  body {
+    @apply bg-ivory text-ink font-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-fraunces), serif;
+    @apply font-normal tracking-tight;
+    line-height: 1.05;
+  }
+
+  /* Visible focus ring everywhere — accessibility is not optional polish */
+  a:focus-visible,
+  button:focus-visible {
+    outline: 2px solid theme("colors.emerald.DEFAULT");
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  /* Respect user motion preference globally as a hard floor.
+     Component-level reduced-motion branches (below) handle the
+     GSAP/Framer-driven reveals; this covers any CSS transitions too. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .wrap {
+    @apply mx-auto max-w-page px-6 sm:px-8 lg:px-[6vw];
+  }
+
+  /*
+   * The Signature Moment — a thin sweep of gold light across the seal
+   * mark's engraved ring, masked so it only lights the stroke itself,
+   * never the surrounding negative space. `background-position` is the
+   * only animated property (GPU-cheap; no layout/paint cost to
+   * surrounding content, per Motion Bible §16).
+   */
+  .seal-mark__sweep {
+    background: linear-gradient(
+      115deg,
+      transparent 40%,
+      theme("colors.gold.soft") 48%,
+      theme("colors.gold.DEFAULT") 50%,
+      theme("colors.gold.soft") 52%,
+      transparent 60%
+    );
+    background-size: 300% 300%;
+    background-position: -100% -100%;
+    mix-blend-mode: soft-light;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, black 62%, transparent 66%);
+    mask-image: radial-gradient(circle at 50% 50%, black 62%, transparent 66%);
+    opacity: 0;
+  }
+
+  /* Interactive trigger: Header/Footer, sweeps on hover or keyboard focus
+     of the parent link — pure CSS, zero JavaScript. */
+  a:hover .seal-mark--interactive .seal-mark__sweep,
+  a:focus-visible .seal-mark--interactive .seal-mark__sweep {
+    opacity: 1;
+    animation: seal-sweep 900ms cubic-bezier(0.22, 1, 0.36, 1) 1;
+  }
+
+  /* Ceremonial trigger: Final CTA only, plays once on mount, timed to
+     land just after that section's headline/subtext settle — the
+     platform's one automatic, non-hover-gated sweep, reserved per
+     Motion Bible §18's ceremonial-rarity rule. */
+  .seal-mark--ceremonial .seal-mark__sweep {
+    opacity: 1;
+    animation: seal-sweep 1400ms cubic-bezier(0.22, 1, 0.36, 1) 900ms 1 both;
+  }
+
+  @keyframes seal-sweep {
+    from {
+      background-position: -100% -100%;
+    }
+    to {
+      background-position: 200% 200%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .seal-mark__sweep {
+      animation: none !important;
+      opacity: 0 !important;
+    }
+  }
+}

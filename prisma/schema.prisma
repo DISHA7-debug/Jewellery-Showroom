@@ -1,0 +1,171 @@
+// Prisma Schema for Aranya Platform (Multi-Tenant SaaS Digital Showroom)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id             String            @id @default(cuid())
+  name           String            @default("Aranya Jewels")
+  slug           String            @unique @default("aranya-jewels")
+  domain         String?           @unique
+  logoUrl        String?
+  whatsappNumber String            @default("919999999999")
+  themeJson      String            @default("{}")
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  users          User[]
+  collections    Collection[]
+  products       Product[]
+  showrooms      Showroom[]
+  bookings       Booking[]
+  testimonials   Testimonial[]
+  contents       HomepageContent[]
+  media          MediaAsset[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String
+  name         String?
+  passwordHash String
+  role         String   @default("OWNER")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, email])
+}
+
+model Collection {
+  id            String    @id @default(cuid())
+  tenantId      String
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name          String
+  slug          String
+  subtitle      String?
+  description   String?
+  coverImageUrl String
+  displayOrder  Int       @default(0)
+  isFeatured    Boolean   @default(true)
+  isHidden      Boolean   @default(false)
+  products      Product[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([tenantId, slug])
+}
+
+model Product {
+  id              String         @id @default(cuid())
+  tenantId        String
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  collectionId    String?
+  collection      Collection?    @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  title           String
+  slug            String
+  category        String         @default("Necklace")
+  description     String
+  metalPurity     String         @default("22K Yellow Gold")
+  grossWeightG    Float          @default(0)
+  netWeightG      Float          @default(0)
+  gemstoneDetails String?
+  makingCharges   String         @default("12% per gram")
+  bisHallmarkInfo String         @default("BIS 916 Hallmarked")
+  availability    String         @default("IN_STOCK")
+  isFeatured      Boolean        @default(false)
+  isArchived      Boolean        @default(false)
+  videoUrl        String?
+  images          ProductImage[]
+  bookings        Booking[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([tenantId, slug])
+}
+
+model ProductImage {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  imageUrl     String
+  altText      String?
+  isHero       Boolean  @default(false)
+  displayOrder Int      @default(0)
+}
+
+model Showroom {
+  id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  address   String
+  phone     String
+  hours     String
+  mapUrl    String?
+  isActive  Boolean   @default(true)
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+}
+
+model Booking {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  showroomId   String
+  showroom     Showroom  @relation(fields: [showroomId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  customerName String
+  phone        String
+  email        String
+  date         String
+  timeSlot     String
+  notes        String?
+  status       String    @default("PENDING")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Testimonial {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customerName String
+  context      String
+  quote        String
+  avatarUrl    String?
+  isApproved   Boolean  @default(true)
+  isFeatured   Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+}
+
+model HomepageContent {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sectionKey  String
+  contentJson String
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, sectionKey])
+}
+
+model MediaAsset {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  filename  String
+  url       String
+  mimeType  String
+  sizeBytes Int
+  altText   String?
+  createdAt DateTime @default(now())
+}
